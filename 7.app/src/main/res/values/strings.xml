@@ -1,1 +1,14 @@
-
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RIGAN Flashlight Projector</string>
+    <string name="power_button_desc">Toggle Flashlight</string>
+    <string name="battery_label">Battery Level</string>
+    <string name="status_standby">SYSTEM STANDBY</string>
+    <string name="status_torch_on">FLASHLIGHT ACTIVE</string>
+    <string name="status_sos_active">SOS BEACON TRANSMITTING</string>
+    <string name="status_strobe_active">STROBE PULSE ACTIVE</string>
+    <string name="status_emergency_active">EMERGENCY ALERT ACTIVE</string>
+    <string name="status_no_flash">NO HARDWARE FLASH</string>
+    <string name="no_flash_message">No camera flash hardware detected. You can still use the Screen Light Projector.</string>
+    <string name="projector_simulation_disclaimer">Visual ambient screen projection simulation. Smartphone LEDs do not project physical images without external projector optics.</string>
+</resources>
