@@ -1,1 +1,1 @@
-
+-keep class com.rigan.flashlightprojector.ui.ProjectorVisualView { *; }
