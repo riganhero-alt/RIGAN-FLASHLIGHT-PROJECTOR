@@ -1,1 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Camera permission for reliable hardware flash access across OEM ROMs -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Optional hardware feature so flash-less tablets can still use Screen Projector -->
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_rigan_logo"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_rigan_logo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RiganFlashlightProjector">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ProjectorActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.RiganProjectorFullscreen" />
+
+    </application>
+
+</manifest>
