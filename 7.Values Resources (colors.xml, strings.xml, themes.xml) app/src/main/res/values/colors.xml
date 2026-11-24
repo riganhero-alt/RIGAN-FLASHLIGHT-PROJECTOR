@@ -1,1 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="rigan_bg_dark">#05070D</color>
+    <color name="rigan_surface">#0E1525</color>
+    <color name="rigan_electric_blue">#00E5FF</color>
+    <color name="rigan_white">#FFFFFF</color>
+    <color name="rigan_text_secondary">#8A9BB8</color>
+    <color name="rigan_danger">#FF5252</color>
 
+    <color name="emergency_red_tint">#44FF1744</color>
+    <color name="emergency_blue_tint">#4400B0FF</color>
+
+    <color name="proj_violet">#AA00FF</color>
+    <color name="proj_red">#FF1744</color>
+    <color name="proj_green">#00E676</color>
+    <color name="proj_gold">#FFD600</color>
+</resources>
