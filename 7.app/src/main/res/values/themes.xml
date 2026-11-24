@@ -1,1 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.RiganFlashlightProjector" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/rigan_electric_blue</item>
+        <item name="colorOnPrimary">@color/rigan_bg_dark</item>
+        <item name="android:windowBackground">@color/rigan_bg_dark</item>
+        <item name="android:statusBarColor">@color/rigan_bg_dark</item>
+        <item name="android:navigationBarColor">@color/rigan_bg_dark</item>
+    </style>
 
+    <style name="Theme.RiganProjectorFullscreen" parent="Theme.RiganFlashlightProjector">
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>
