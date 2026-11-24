@@ -1,1 +1,187 @@
+name: Build RIGAN Flashlight Projector APK
 
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-debug-apk:
+    name: Detect Project & Build Debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Detect Android project root and validate required files
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 1. Detect Android Gradle project root (prefer repo root if settings.gradle* exists there)
+          if [ -f "settings.gradle.kts" ] || [ -f "settings.gradle" ]; then
+            PROJECT_ROOT="."
+          else
+            FOUND_SETTINGS=$(find . -maxdepth 4 \( -name "settings.gradle.kts" -o -name "settings.gradle" \) \
+              -not -path "*/.git/*" -not -path "*/.gradle/*" -not -path "*/build/*" \
+              | awk -F'/' '{print NF, $0}' | sort -n | head -n1 | cut -d' ' -f2- || true)
+
+            if [ -n "$FOUND_SETTINGS" ]; then
+              PROJECT_ROOT=$(dirname "$FOUND_SETTINGS")
+            else
+              # Fallback search for a standalone build.gradle(.kts) only to produce an accurate diagnostic report
+              FOUND_BUILD=$(find . -maxdepth 4 \( -name "build.gradle.kts" -o -name "build.gradle" \) \
+                -not -path "*/.git/*" -not -path "*/.gradle/*" -not -path "*/build/*" \
+                | awk -F'/' '{print NF, $0}' | sort -n | head -n1 | cut -d' ' -f2- || true)
+              if [ -n "$FOUND_BUILD" ]; then
+                PROJECT_ROOT=$(dirname "$FOUND_BUILD")
+              else
+                PROJECT_ROOT=""
+              fi
+            fi
+          fi
+
+          if [ -z "$PROJECT_ROOT" ]; then
+            echo "::error::Could not locate an Android Gradle project root (no settings.gradle, settings.gradle.kts, build.gradle, or build.gradle.kts found)."
+            {
+              echo "### Project Inspection Failed"
+              echo "No Gradle project files (\`settings.gradle\`, \`settings.gradle.kts\`, \`build.gradle\`, or \`build.gradle.kts\`) were found in the repository."
+              echo ""
+              echo "**Repository top-level entries:**"
+              ls -la
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "Detected Android Gradle project root: $PROJECT_ROOT"
+
+          # 2. Validate required project configuration & Gradle Wrapper files without modifying anything
+          MISSING_FILES=()
+
+          if [ ! -f "$PROJECT_ROOT/settings.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/settings.gradle" ]; then
+            MISSING_FILES+=("$PROJECT_ROOT/settings.gradle or $PROJECT_ROOT/settings.gradle.kts")
+          fi
+
+          if [ ! -f "$PROJECT_ROOT/build.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/build.gradle" ]; then
+            MISSING_FILES+=("$PROJECT_ROOT/build.gradle or $PROJECT_ROOT/build.gradle.kts")
+          fi
+
+          APP_GRADLE=$(find "$PROJECT_ROOT" -maxdepth 3 \( -name "build.gradle.kts" -o -name "build.gradle" \) \
+            -not -path "$PROJECT_ROOT/build.gradle*" -not -path "*/build/*" -not -path "*/.gradle/*" \
+            | head -n1 || true)
+          if [ -z "$APP_GRADLE" ]; then
+            MISSING_FILES+=("Android app module build file (e.g., $PROJECT_ROOT/app/build.gradle.kts or $PROJECT_ROOT/app/build.gradle)")
+          fi
+
+          MANIFEST_FILE=$(find "$PROJECT_ROOT" -maxdepth 5 -name "AndroidManifest.xml" \
+            -not -path "*/build/*" | head -n1 || true)
+          if [ -z "$MANIFEST_FILE" ]; then
+            MISSING_FILES+=("AndroidManifest.xml under $PROJECT_ROOT")
+          fi
+
+          if [ ! -f "$PROJECT_ROOT/gradlew" ]; then
+            MISSING_FILES+=("$PROJECT_ROOT/gradlew")
+          fi
+          if [ ! -f "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" ]; then
+            MISSING_FILES+=("$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar")
+          fi
+          if [ ! -f "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties" ]; then
+            MISSING_FILES+=("$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties")
+          fi
+
+          if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+            echo "::error::Missing required Android/Gradle Wrapper file(s). No project files were generated or modified."
+            {
+              echo "### Build Aborted: Missing Required Files"
+              echo "Detected project root: \`$PROJECT_ROOT\`"
+              echo ""
+              echo "The following required project or Gradle Wrapper files are missing:"
+              for f in "${MISSING_FILES[@]}"; do
+                echo "- \`$f\`"
+                echo "::error::Missing required file: $f"
+              done
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # 3. Detect required JDK version from existing Gradle build scripts (default to 17)
+          JAVA_VERSION="17"
+          if grep -Eq "VERSION_21|jvmToolchain\(21\)|JavaLanguageVersion\.of\(21\)" \
+            "$PROJECT_ROOT"/build.gradle* "$PROJECT_ROOT"/*/build.gradle* 2>/dev/null; then
+            JAVA_VERSION="21"
+          fi
+
+          echo "project_root=$PROJECT_ROOT" >> "$GITHUB_OUTPUT"
+          echo "java_version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Project Inspection Passed"
+            echo "- **Project Root:** \`$PROJECT_ROOT\`"
+            echo "- **Detected JDK:** \`$JAVA_VERSION\`"
+            echo "- **Gradle Wrapper:** \`$PROJECT_ROOT/gradlew\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up JDK ${{ steps.inspect.outputs.java_version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.inspect.outputs.java_version }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Build Debug APK with existing Gradle Wrapper
+        working-directory: ${{ steps.inspect.outputs.project_root }}
+        run: |
+          if [ -x "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          else
+            sh ./gradlew assembleDebug --no-daemon --stacktrace
+          fi
+
+      - name: Verify generated Debug APK
+        id: verify_apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ROOT="${{ steps.inspect.outputs.project_root }}"
+
+          APK_FILES=$(find "$PROJECT_ROOT" -type f -path "*/build/outputs/apk/*" -name "*.apk" | sort || true)
+          if [ -z "$APK_FILES" ]; then
+            echo "::error::Gradle build finished, but no APK file was found under $PROJECT_ROOT/**/build/outputs/apk/."
+            exit 1
+          fi
+
+          {
+            echo "### Generated APK Files"
+            while IFS= read -r apk; do
+              SIZE=$(du -h "$apk" | cut -f1)
+              echo "- \`$apk\` ($SIZE)"
+            done <<< "$APK_FILES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: RIGAN-FLASHLIGHT-PROJECTOR-debug-apk
+          path: ${{ steps.inspect.outputs.project_root }}/**/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 30
