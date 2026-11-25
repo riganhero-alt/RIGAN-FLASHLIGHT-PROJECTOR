@@ -3,6 +3,20 @@ name: Build RIGAN Flashlight Projector APK
 on:
   push:
     branches: [main]
+    paths:
+      - ".github/workflows/build-apk.yml"
+      - "2.App app/**"
+      - "2.app app/**"
+      - "2.app build.gradle.kts (Project Level"
+      - "3'AndroidManifest.xml app/**"
+      - "4.app/**"
+      - "4'Kotlin Source Files app/**"
+      - "5.XML Layouts app/**"
+      - "5.app/**"
+      - "6.app/**"
+      - "6.Drawables & Vector Icons app/**"
+      - "7.app/**"
+      - "7.Values Resources (colors.xml, strings.xml, themes.xml) app/**"
   workflow_dispatch:
 
 permissions:
@@ -11,7 +25,7 @@ permissions:
 jobs:
   build-debug-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -20,23 +34,29 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Reconstruct Android project from uploaded source folders
+      - name: Reconstruct Android Studio project from saved source folders
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p app/src/main
-          cp "3'AndroidManifest.xml app/src/main/AndroidManifest.xml" app/src/main/AndroidManifest.xml
-          cp -R "4.app/src/main/java" app/src/main/
-          mkdir -p app/src/main/java/com/rigan/flashlightprojector
-          cp "4'Kotlin Source Files app/src/main/java/com/rigan/flashlightprojector/FlashlightController.kt" app/src/main/java/com/rigan/flashlightprojector/FlashlightController.kt
-          cp -R "5.XML Layouts app/src/main/res/layout" app/src/main/res/
-          cp -R "6.Drawables & Vector Icons app/src/main/res/drawable" app/src/main/res/
-          cp -R "7.Values Resources (colors.xml, strings.xml, themes.xml) app/src/main/res/values" app/src/main/res/
+          mkdir -p app/src/main/java app/src/main/res/layout app/src/main/res/drawable app/src/main/res/values
+
+          cp "3'AndroidManifest.xml app/src/main/AndroidManifest.xml"
+          cp -R "4.app/src/main/java/." app/src/main/java/
+          cp "4'Kotlin Source Files app/src/main/java/com/rigan/flashlightprojector/FlashlightController.kt" app/src/main/java/com/rigan/flashlightprojector/
+          cp "5.XML Layouts app/src/main/res/layout/activity_main.xml" app/src/main/res/layout/
+          cp "5.app/src/main/res/layout/activity_projector.xml" app/src/main/res/layout/
+
+          cp -R "6.app/src/main/res/drawable/." app/src/main/res/drawable/
+          cp -R "6.Drawables & Vector Icons app/src/main/res/drawable/." app/src/main/res/drawable/
+          cp -R "7.app/src/main/res/values/." app/src/main/res/values/
+          cp -R "7.Values Resources (colors.xml, strings.xml, themes.xml) app/src/main/res/values/." app/src/main/res/values/
+
           cp "2.App app/build.gradle.kts (Module Level" app/build.gradle.kts
           cp "2.app app/proguard-rules.pro" app/proguard-rules.pro
           cp "2.app build.gradle.kts (Project Level" build.gradle.kts
+
           cat > settings.gradle.kts <<'EOF'
           pluginManagement {
               repositories {
@@ -55,11 +75,13 @@ jobs:
           rootProject.name = "RIGAN-Flashlight-Projector"
           include(":app")
           EOF
+
           cat > gradle.properties <<'EOF'
           org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
           android.useAndroidX=true
           kotlin.code.style=official
           EOF
+
           echo "### Reconstructed Android project" >> "$GITHUB_STEP_SUMMARY"
           find app/src/main -type f | sort >> "$GITHUB_STEP_SUMMARY"
 
@@ -67,23 +89,26 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: true
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
+          packages: platform-tools
+
+      - name: Install required Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: "8.9"
 
       - name: Build installable debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Verify APK
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          ls -lh "$APK"
+          echo "APK verified: $APK" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
