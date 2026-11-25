@@ -15,3 +15,6 @@ GitHub Actions also builds a debug APK on pushes and uploads it as a workflow ar
 
 ## Important limitation
 A phone flashlight LED cannot project a video image onto a wall. This app provides video playback and zoom on the phone screen and a real flashlight toggle. Actual wall projection requires external projector hardware.
+
+
+Build note: Java and Kotlin bytecode targets are both configured to JVM 17 for Android Gradle Plugin compatibility.
