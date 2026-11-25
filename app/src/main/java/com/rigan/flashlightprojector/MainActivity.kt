@@ -1,16 +1,20 @@
 package com.rigan.flashlightprojector
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.ScaleGestureDetector
+import android.view.TextureView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
@@ -29,6 +33,10 @@ class MainActivity : AppCompatActivity() {
 
     private val pickVideo = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let { playVideo(it) }
+    }
+    private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) applyTorchToggle()
+        else Toast.makeText(this, "Flashlight ব্যবহারের জন্য Camera permission প্রয়োজন", Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +67,7 @@ class MainActivity : AppCompatActivity() {
             useController = true
             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
             setBackgroundColor(0xFF000000.toInt())
+            setVideoTextureView(TextureView(this@MainActivity))
         }
         val playerParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
             .apply { topMargin = 12; bottomMargin = 12 }
@@ -139,6 +148,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleTorch() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            cameraPermission.launch(Manifest.permission.CAMERA)
+            return
+        }
+        applyTorchToggle()
+    }
+
+    private fun applyTorchToggle() {
         val id = cameraId
         if (id == null) {
             Toast.makeText(this, "এই ফোনে Flashlight পাওয়া যায়নি", Toast.LENGTH_SHORT).show()
@@ -163,7 +180,9 @@ class MainActivity : AppCompatActivity() {
         player?.release()
         player = null
         try {
-            if (torchOn && cameraId != null) (getSystemService(CAMERA_SERVICE) as CameraManager).setTorchMode(cameraId!!, false)
+            if (torchOn && cameraId != null && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                (getSystemService(CAMERA_SERVICE) as CameraManager).setTorchMode(cameraId!!, false)
+            }
         } catch (_: Exception) { }
         super.onDestroy()
     }
