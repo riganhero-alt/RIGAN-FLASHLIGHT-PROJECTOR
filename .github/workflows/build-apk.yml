@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           mkdir -p app/src/main/java app/src/main/res/layout app/src/main/res/drawable app/src/main/res/values
 
-          cp "3'AndroidManifest.xml app/src/main/AndroidManifest.xml"
+          cp "3'AndroidManifest.xml app/src/main/AndroidManifest.xml" app/src/main/AndroidManifest.xml
           cp -R "4.app/src/main/java/." app/src/main/java/
           cp "4'Kotlin Source Files app/src/main/java/com/rigan/flashlightprojector/FlashlightController.kt" app/src/main/java/com/rigan/flashlightprojector/
           cp "5.XML Layouts app/src/main/res/layout/activity_main.xml" app/src/main/res/layout/
