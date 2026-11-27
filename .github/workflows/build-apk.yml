@@ -47,6 +47,8 @@ jobs:
           cp "4'Kotlin Source Files app/src/main/java/com/rigan/flashlightprojector/FlashlightController.kt" app/src/main/java/com/rigan/flashlightprojector/
           cp "5.XML Layouts app/src/main/res/layout/activity_main.xml" app/src/main/res/layout/
           cp "5.app/src/main/res/layout/activity_projector.xml" app/src/main/res/layout/
+          cp "5.app/src/main/res/layout/activity_live_camera.xml" app/src/main/res/layout/
+          cp "5.app/src/main/res/layout/activity_gallery_video.xml" app/src/main/res/layout/
 
           cp -R "6.app/src/main/res/drawable/." app/src/main/res/drawable/
           cp -R "6.Drawables & Vector Icons app/src/main/res/drawable/." app/src/main/res/drawable/
