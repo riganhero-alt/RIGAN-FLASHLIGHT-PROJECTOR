@@ -31,6 +31,16 @@
         </activity>
 
         <activity
+            android:name=".LiveCameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".GalleryVideoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".ProjectorActivity"
             android:exported="false"
             android:screenOrientation="portrait"
