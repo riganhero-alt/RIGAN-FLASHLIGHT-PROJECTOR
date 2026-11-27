@@ -38,8 +38,12 @@ class ProjectorActivity : AppCompatActivity() {
         binding = ActivityProjectorBinding.inflate(layoutInflater)
         setContentView(binding.root)
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        torchCameraId = cameraManager.cameraIdList.firstOrNull { id ->
-            cameraManager.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        torchCameraId = try {
+            cameraManager.cameraIdList.firstOrNull { id ->
+                cameraManager.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+            }
+        } catch (_: Exception) {
+            null
         }
 
         enableFullscreenImmersive()
