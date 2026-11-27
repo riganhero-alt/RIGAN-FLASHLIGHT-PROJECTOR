@@ -1,6 +1,13 @@
 package com.rigan.flashlightprojector
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import android.view.View
 import android.view.WindowManager
 import android.widget.SeekBar
@@ -16,6 +23,13 @@ class ProjectorActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProjectorBinding
     private var hudVisible = true
+    private lateinit var cameraManager: CameraManager
+    private var torchCameraId: String? = null
+    private var torchEnabled = false
+
+    private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) toggleTorch() else Toast.makeText(this, "Camera permission is required for rear LED control.", Toast.LENGTH_LONG).show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +37,10 @@ class ProjectorActivity : AppCompatActivity() {
 
         binding = ActivityProjectorBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        torchCameraId = cameraManager.cameraIdList.firstOrNull { id ->
+            cameraManager.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        }
 
         enableFullscreenImmersive()
         setWindowBrightness(100)
@@ -39,6 +57,10 @@ class ProjectorActivity : AppCompatActivity() {
 
     private fun setupControls() {
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnTorch.setOnClickListener {
+            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) toggleTorch()
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
 
         // Tap background visual to toggle HUD for distraction-free projection
         binding.projectorVisualView.setOnClickListener {
@@ -95,6 +117,32 @@ class ProjectorActivity : AppCompatActivity() {
         binding.colorGreen.setOnClickListener { applyColor(R.color.proj_green) }
         binding.colorGold.setOnClickListener { applyColor(R.color.proj_gold) }
         binding.colorWhite.setOnClickListener { applyColor(R.color.rigan_white) }
+    }
+
+    private fun toggleTorch() {
+        val id = torchCameraId
+        if (id == null) {
+            Toast.makeText(this, "This device has no rear LED flash.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val next = !torchEnabled
+        try {
+            cameraManager.setTorchMode(id, next)
+            torchEnabled = next
+            binding.btnTorch.text = if (torchEnabled) "LED ON" else "LED OFF"
+        } catch (error: Exception) {
+            torchEnabled = false
+            binding.btnTorch.text = "LED OFF"
+            Toast.makeText(this, "Could not control the rear LED: " + (error.localizedMessage ?: "not available"), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onStop() {
+        if (torchEnabled) {
+            try { torchCameraId?.let { cameraManager.setTorchMode(it, false) } } catch (_: Exception) {}
+            torchEnabled = false
+        }
+        super.onStop()
     }
 
     private fun applyColor(colorRes: Int) {
