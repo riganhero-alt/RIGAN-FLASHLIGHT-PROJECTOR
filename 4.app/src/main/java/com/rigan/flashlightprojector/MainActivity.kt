@@ -149,12 +149,23 @@ class MainActivity : AppCompatActivity() {
 
         // Open Full-Screen Visual Projector Experience
         binding.btnOpenProjector.setOnClickListener {
-            // Turn off hardware flash when switching to projector screen simulation
-            if (flashlightController.isActive()) {
-                flashlightController.stopAll()
-                updateDashboardUi()
-            }
+            stopHardwareFlash()
             startActivity(Intent(this, ProjectorActivity::class.java))
+        }
+        binding.btnOpenLiveCamera.setOnClickListener {
+            stopHardwareFlash()
+            startActivity(Intent(this, LiveCameraActivity::class.java))
+        }
+        binding.btnOpenGalleryVideo.setOnClickListener {
+            stopHardwareFlash()
+            startActivity(Intent(this, GalleryVideoActivity::class.java))
+        }
+    }
+
+    private fun stopHardwareFlash() {
+        if (flashlightController.isActive()) {
+            flashlightController.stopAll()
+            updateDashboardUi()
         }
     }
 
