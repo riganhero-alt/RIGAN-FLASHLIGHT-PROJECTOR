@@ -43,7 +43,7 @@ class GalleryVideoActivity : AppCompatActivity() {
         })
         binding.videoView.setOnTouchListener { _, event ->
             scaleDetector.onTouchEvent(event)
-            true
+            event.pointerCount > 1
         }
         binding.btnClose.setOnClickListener { finish() }
         binding.btnResetZoom.setOnClickListener {
