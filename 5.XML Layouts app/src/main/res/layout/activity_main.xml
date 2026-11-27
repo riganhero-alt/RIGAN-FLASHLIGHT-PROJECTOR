@@ -376,7 +376,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="8dp"
-                    android:backgroundTint="@color/rigan_deep_blue"
+                    android:backgroundTint="@color/rigan_surface"
                     android:text="OPEN LIVE CAMERA MODE"
                     android:textColor="@color/rigan_white"
                     app:cornerRadius="14dp" />
@@ -386,7 +386,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="8dp"
-                    android:backgroundTint="@color/rigan_green"
+                    android:backgroundTint="@color/proj_green"
                     android:text="PLAY GALLERY VIDEO • PINCH TO ZOOM"
                     android:textColor="@color/rigan_bg_dark"
                     app:cornerRadius="14dp" />
