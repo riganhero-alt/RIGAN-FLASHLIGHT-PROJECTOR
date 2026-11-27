@@ -17,6 +17,8 @@ on:
       - "6.Drawables & Vector Icons app/**"
       - "7.app/**"
       - "7.Values Resources (colors.xml, strings.xml, themes.xml) app/**"
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
